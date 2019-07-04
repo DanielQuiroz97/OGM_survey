@@ -1,0 +1,94 @@
+---
+title: "Resultados de Percepción sobre Organismos Genéticamente Modificados"
+author: "Daniel Quiroz"
+output: html_notebook
+---
+
+Este documento tiene como finalidad analizar los resultados obtenidos a partir
+de las encuestas ralizadas en la Universidad Regional Amazónica Ikiam.
+
+# Cargar Librerías
+Como primer paso, se cargarán las librerías necesarias para realizar los
+análisis.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+#### Load Packages ####
+library(readxl) # Read Excel Files
+library(tidyverse) # Easily Install and Load the 'Tidyverse'
+library(stringr) # Simple, Consistent Wrappers for Common String Operations
+library(ggalluvial)
+library(magrittr)
+library(ggsci)
+```
+
+# Limpieza de datos
+Como todos los datos del mundo real, tienen errores de tabulación los cuales
+deben ser corregidos. En esta sección se irán recopilando los pasos para
+limpiar los datos.
+
+## Carreras repetidas
+En los datos crudos se encontraron errores de tipeo, los cuales llevan a
+condierar como diferentes carreras.
+
+```{r}
+clean_data <- raw_data %>% mutate(P4a = tolower(P4a) ) %>%
+  # Clean Data
+  # Repeated careers
+  mutate(P4a = ifelse(P4a %in% 'ingenieria en ecosistema',
+                      "ingeniería en ecosistemas", P4a)) %>% 
+  mutate(P4a = ifelse(P4a %in% c("ingeniería en ciencas del agua",
+                                 "ingeniería en ciencias del agua"),
+                      "ingeniería en ciencias del agua", P4a)) %>% 
+  mutate(P4a = ifelse(grepl("ingeniería", P4a), "Ingeniería", P4a) ) %>% 
+  mutate(P4a = ifelse(!(grepl("Ingeniería", P4a) ),
+                      "Licenciaturas", P4a) )
+```
+
+Ahora, asignaremos las etiquetas de *masculino* y *femenino* para los valores
+1 y 2 tabulados
+
+```{r}
+clean_data %<>%  mutate(P2 = factor(P2, levels = c(1,2),
+                                     labels = c("Masculino", "Femenino")))
+```
+
+## Rangos de edad
+
+
+En este paso se asignarán rangos de edad a los valores numéricos
+
+```{r}
+clean_data %<>% 
+  mutate(P3 = ifelse(P3 == 1, "17-20", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 2, "21-25", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 3, "26-30", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 4, "31-40", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 5, "41-50", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 1, "> 51", P3))
+```
+
+## Semestres
+Se diferenciará mayormente entre tronco común y semestres de carrera
+```{r}
+clean_data %<>% 
+  mutate(`5` = ifelse(`5` > 4, "Carrera", "Tronco común"))
+```
+
+
+# Descripción del espacio muestreal
+Como primera instancia, debemos la composición del espacio muestreal.
+Para esto, emplearemos gráficos descriptivos.
+
+```{r}
+# Summarinsing data
+sample_space <- clean_data %>% group_by(P2, P3, P4a, `5`) %>% 
+  summarise(N = n()) %>% arrange(P4a)
+ggplot(sample_space, aes(axis1 = P4a, axis2 = `5`, axis3 = P3, y = N)) +
+  geom_alluvium(aes(fill = P2),  width = 1/8) +
+  geom_stratum(width = 1/6, fill = "white", color = "grey40") +
+  geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
+  scale_x_continuous(breaks = 1:3, labels = c("Carreras", "Semestre", "Edad")) +
+  scale_fill_jama() + theme_bw() + 
+  labs(fill = "Género", y = "Número de Encuestas")
+```
+
