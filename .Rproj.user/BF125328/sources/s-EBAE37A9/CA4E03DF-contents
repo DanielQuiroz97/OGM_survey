@@ -2,7 +2,6 @@
 title: "Resultados de Percepción sobre Organismos Genéticamente Modificados"
 author: "Daniel Quiroz"
 output:
-  pdf_document: default
   html_notebook: default
 ---
 
@@ -124,26 +123,32 @@ medios <- clean_data %>% select(`6a`:`6g`) %>% mutate(Index = 1:n()) %>%
   filter(Valor <= 1)
 
 ```
-Una vez ya hemos asignado la etiqueta a cada categoría, procedemos a graficar
-el número encuestados que emplea determinado medio de comunicación
+Una vez tenemos asignado las etiquetas asignadas a cada código, procedemos a
+obtener **la probabilidad de que determinado medio sea empleado,**
+**cuando son empleados *n* medios de comnicación**.
+
+
 ```{r}
-medios_n <- medios %>%  group_by(Medio) %>% 
-  summarise(N = sum(Valor)) %>% arrange(-N) %>%
-  mutate(Medio = factor(Medio, levels = .$Medio))
-ggplot(medios_n, aes(Medio, N, fill = Medio)) +
-  geom_bar(stat = "identity") + coord_flip() + theme_bw() +
-  scale_fill_grey() + guides(fill = F) + 
-  labs(y = "Personas encuestadas", x = "Medios de comunicación")
+labels <- medios %>% filter(Valor != 0) %>% 
+  arrange(Index) %>% 
+  group_by(Index) %>% mutate(total = sum(Valor)) %>%
+  count(total) %>% ungroup() %>% count(n) %>% 
+  mutate(nn = paste0("n = ", nn))
+
+medios %>% filter(Valor != 0) %>% arrange(Index) %>%
+  group_by(Index) %>% mutate(total = sum(Valor)) %>%
+  select(-Valor) %>%
+  ggplot() +
+  geom_bar(aes(factor(total), fill = Medio),
+           position = "fill", color = "black") +
+  geom_text(data = labels, aes(x= factor(n), y = 1.05, label = nn) ) +
+  ggsci::scale_fill_igv() + theme_bw() + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.25) ) +
+  labs(x = "Número de Medios", y = "Probabilidad", fill = "Medios de\ncomunicación")
 ```
 
-Además, también podemos obtener el número de medios empleados por persona.
-```{r}
-medios_percapita <- medios %>%  group_by(Index) %>% 
-  summarise(N = sum(Valor)) %>% arrange(-N) %>%
-  mutate(N = factor(N))
-ggplot(medios_percapita, aes(N, fill = N)) +
-  geom_bar() + coord_flip() + theme_bw() +
-  scale_fill_grey() + guides(fill = F) + 
-  labs(y = "Personas encuestadas", x = "Medios de comunicación empleados")
-```
-
+Por ejemplo, de los 126 encuestados que solo emplean un medio de comunicación,
+al rededor del 90% emplea solo Internet y/o redes sociales. Por otro lado,
+cuando emplean dos medios de comunicación, el uso de internet decrece a un 50%
+y las revistas científicas tienen un 20% de probabilidad de ser empleadas como
+medio de comunicación.
