@@ -1,7 +1,9 @@
 ---
 title: "Resultados de Percepción sobre Organismos Genéticamente Modificados"
 author: "Daniel Quiroz"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 Este documento tiene como finalidad analizar los resultados obtenidos a partir
@@ -20,6 +22,18 @@ library(ggalluvial)
 library(magrittr)
 library(ggsci)
 ```
+# Importación de datos
+Como primer paso se importarán los datos crudos, para esto se usará una función
+iterativa, map.
+
+```{r}
+raw_data <- map(3:11, .f = function(x){
+  read_xlsx(path = 'data/Encuestas.xlsx', sheet = x) %>% 
+    mutate(Sheet = x)
+}) %>% bind_rows()
+
+```
+
 
 # Limpieza de datos
 Como todos los datos del mundo real, tienen errores de tabulación los cuales
@@ -83,12 +97,53 @@ Para esto, emplearemos gráficos descriptivos.
 # Summarinsing data
 sample_space <- clean_data %>% group_by(P2, P3, P4a, `5`) %>% 
   summarise(N = n()) %>% arrange(P4a)
-ggplot(sample_space, aes(axis1 = P4a, axis2 = `5`, axis3 = P3, y = N)) +
+sspace_plot <- ggplot(sample_space, aes(axis1 = P4a, axis2 = `5`, axis3 = P3, y = N)) +
   geom_alluvium(aes(fill = P2),  width = 1/8) +
   geom_stratum(width = 1/6, fill = "white", color = "grey40") +
   geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
   scale_x_continuous(breaks = 1:3, labels = c("Carreras", "Semestre", "Edad")) +
   scale_fill_jama() + theme_bw() + 
   labs(fill = "Género", y = "Número de Encuestas")
+sspace_plot
+```
+
+## Medios de Comunicación
+En este apartado, se analizará el número de medios de comunicación que emplea
+cada encuestado para informarse.
+
+```{r}
+medios <- clean_data %>% select(`6a`:`6g`) %>% mutate(Index = 1:n()) %>% 
+  gather(key = "Medio", value = "Valor", `6a`:`6g`) %>% 
+  mutate(Medio = ifelse(Medio %in% "6a", "Radio AM/FM", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6b", "Televisión abierta", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6c", "Televisión por cable", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6d", "Periódicos/Revistas", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6e", "Internet/Redes Sociales", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6f", "Revistas científicas", Medio)) %>% 
+  mutate(Medio = ifelse(Medio %in% "6g", "Otos", Medio)) %>%
+  filter(Valor <= 1)
+
+```
+Una vez ya hemos asignado la etiqueta a cada categoría, procedemos a graficar
+el número encuestados que emplea determinado medio de comunicación
+```{r}
+medios_n <- medios %>%  group_by(Medio) %>% 
+  summarise(N = sum(Valor)) %>% arrange(-N) %>%
+  mutate(Medio = factor(Medio, levels = .$Medio))
+ggplot(medios_n, aes(Medio, N, fill = Medio)) +
+  geom_bar(stat = "identity") + coord_flip() + theme_bw() +
+  scale_fill_grey() + guides(fill = F) + 
+  labs(y = "Personas encuestadas", x = "Medios de comunicación")
+```
+
+Además, también podemos obtener el número de medios empleados por persona.
+```{r}
+medios_percapita <- medios %>%  group_by(Index) %>% 
+  summarise(N = sum(Valor)) %>% arrange(-N) %>%
+  mutate(N = factor(N))
+ggplot(medios_percapita, aes(N, fill = N)) +
+  geom_bar() + coord_flip() + theme_bw() +
+  scale_fill_grey() + guides(fill = F) + 
+  labs(y = "Personas encuestadas", x = "Medios de comunicación empleados")
 ```
 

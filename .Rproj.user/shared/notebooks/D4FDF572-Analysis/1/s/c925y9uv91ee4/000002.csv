@@ -1,0 +1,2 @@
+"0","clean_data %<>% "
+"0","  mutate(`5` = ifelse(`5` > 4, ""Carrera"", ""Tronco común""))"
