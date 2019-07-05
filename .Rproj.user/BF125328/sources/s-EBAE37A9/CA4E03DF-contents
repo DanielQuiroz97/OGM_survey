@@ -2,7 +2,10 @@
 title: "Resultados de Percepción sobre Organismos Genéticamente Modificados"
 author: "Daniel Quiroz"
 output:
-  html_notebook: default
+  pdf_document:
+    toc: yes
+  html_notebook:
+    toc: yes
 ---
 
 Este documento tiene como finalidad analizar los resultados obtenidos a partir
@@ -128,7 +131,7 @@ obtener **la probabilidad de que determinado medio sea empleado,**
 **cuando son empleados *n* medios de comnicación**.
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 labels <- medios %>% filter(Valor != 0) %>% 
   arrange(Index) %>% 
   group_by(Index) %>% mutate(total = sum(Valor)) %>%
@@ -143,7 +146,8 @@ medios %>% filter(Valor != 0) %>% arrange(Index) %>%
            position = "fill", color = "black") +
   geom_text(data = labels, aes(x= factor(n), y = 1.05, label = nn) ) +
   ggsci::scale_fill_igv() + theme_bw() + 
-  scale_y_continuous(breaks = seq(0, 1, by = 0.25) ) +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.25), labels = seq(0, 100, by = 25)) +
+  scale_x_discrete(limits = 1:5) +
   labs(x = "Número de Medios", y = "Probabilidad", fill = "Medios de\ncomunicación")
 ```
 
