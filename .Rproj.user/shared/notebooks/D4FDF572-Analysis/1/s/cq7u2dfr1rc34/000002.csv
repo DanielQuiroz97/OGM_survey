@@ -1,2 +1,0 @@
-"0","clean_data %<>%  mutate(P2 = factor(P2, levels = c(1,2),"
-"0","                                     labels = c(""Masculino"", ""Femenino"")))"

@@ -1,7 +1,0 @@
-"0","clean_data %<>% "
-"0","  mutate(P3 = ifelse(P3 == 1, ""17-20"", P3)) %>% "
-"0","  mutate(P3 = ifelse(P3 == 2, ""21-25"", P3)) %>% "
-"0","  mutate(P3 = ifelse(P3 == 3, ""26-30"", P3)) %>% "
-"0","  mutate(P3 = ifelse(P3 == 4, ""31-40"", P3)) %>% "
-"0","  mutate(P3 = ifelse(P3 == 5, ""41-50"", P3)) %>% "
-"0","  mutate(P3 = ifelse(P3 == 1, ""> 51"", P3))"

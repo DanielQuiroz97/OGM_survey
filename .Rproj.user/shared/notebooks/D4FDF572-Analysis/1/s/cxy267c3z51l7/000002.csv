@@ -1,5 +1,0 @@
-"0","raw_data <- map(3:11, .f = function(x){"
-"0","  read_xlsx(path = 'data/Encuestas.xlsx', sheet = x) %>% "
-"0","    mutate(Sheet = x)"
-"0","}) %>% bind_rows()"
-"0",""
