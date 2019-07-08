@@ -104,7 +104,7 @@ sspace_plot <- ggplot(sample_space, aes(axis1 = P4a, axis2 = `5`, axis3 = P3, y 
   geom_stratum(width = 1/6, fill = "white", color = "grey40") +
   geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
   scale_x_continuous(breaks = 1:3, labels = c("Carreras", "Semestre", "Edad")) +
-  scale_fill_jama() + theme_bw() + 
+  scale_fill_jama() + theme_test() + 
   labs(fill = "Género", y = "Número de Encuestas")
 sspace_plot
 ```
@@ -171,24 +171,30 @@ conforme a todas las combinaciones para
 
 ```{r echo=TRUE}
 transform <-  function(x) {
-    ifelse(x == 0, "No", ifelse(x == 1, "Sí", "No sé"))
+    ifelse(x == 0, "No", ifelse(x == 1, "Sí",
+                                ifelse(x == 2, "No sé", "Ya les tiene")))
   } 
-knowledge <- clean_data %>% select(`7`, `8`, `10`) %>%
+knowledge <- clean_data %>% select(`7`, `8`, `10`, `17`) %>%
   mutate_all(transform) %>% mutate_all(as.factor) %>%
-  group_by(`7`, `8`, `10`) %>% summarise(N = n())
+  group_by(`7`, `8`, `10`, `17`) %>% summarise(N = n())
 ```
 
 Con las frecuencias obtenidas, realizared el el gráfico de tipo *alluvial*.
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
-ggplot(knowledge, aes(axis1 = `7`, axis2 = `8`, axis3 = `10`, y = N)) +
-  geom_alluvium(aes(fill = `10`), width = 1/8) +
+labs_know <- c("¿Conoce qué es\nun transgénico?",
+               "¿Son comercializados en EC?",
+               "¿Las etiquetas de los alimentos
+deben incluir información sobre
+el contenido de transgénicos?",
+               "¿Consume\ntransgénicos?")
+ggplot(knowledge, aes(axis1 = `7`, axis2 = `8`, axis4 = `10`,
+                      axis3 = `17`,y = N)) +
+  geom_alluvium(aes(fill = `10`), width = 1/20, alpha = 0.6) +
   geom_stratum(width = 1/6, fill = "white", color = "grey40") +
   geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
-  scale_x_continuous(breaks = 1:3, labels = c("¿Conoce qué es\nun transgénico?",
-                                              "¿Son comercializados en EC?",
-                                              "¿Consume\ntransgénicos?")) +
-  scale_fill_simpsons() + theme_bw() + 
+  scale_x_continuous(breaks = 1:4, labels = labs_know) +
+  scale_fill_uchicago() + theme_test() + 
   labs(y = "Número de Encuestas") + guides(fill = F)
 ```
 
@@ -268,19 +274,19 @@ new_tech <- clean_data %>% select(starts_with("20")) %>%
   mutate(Variable = ifelse(Variable %in% "20 (Bio)",
                            "Biotecnología", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Eolica)",
-                           "Generación de energía eólica", Variable)) %>% 
+                           "Generación de\nenergía eólica", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Modifica)",
-                           "Técnicas de modificación\ngenética", Variable)) %>% 
+                           "Técnicas de\nmodificación genética", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Nano)",
                            "Nanotecnología", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (NBT)",
-                           "Nuevas tecnologías de mejoramiento", Variable)) %>% 
+                           "Nuevas tecnologías\nde mejoramiento", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Quimi)",
                            "Química Agrícola", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Solar)",
-                           "Generación de energía solar", Variable)) %>% 
+                           "Generación de\nenergía solar", Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "20 (Transplante)",
-                           "Transplate de órganos", Variable)) %>% 
+                           "Transplate de\nórganos", Variable)) %>% 
    filter(Valor <= 3)%>%
   mutate(Valor = ifelse(Valor > 1, "No sé", ifelse(Valor < 1, "No", "Si")))
   
@@ -289,6 +295,9 @@ new_tech <- clean_data %>% select(starts_with("20")) %>%
 ggplot(new_tech, aes(Variable, n )) +
   geom_bar(aes(fill = factor(Valor) ), color = "black",
            stat = "identity", position = "fill") + theme_bw() +
-  scale_fill_jama() + coord_flip()
+  scale_y_continuous(breaks = seq(0, 1, by = 0.25),
+                     labels = seq(0, 100, by = 25)) +
+  scale_fill_jama() + coord_flip() +
+  labs(fill = NULL, x = "")
 ```
 
