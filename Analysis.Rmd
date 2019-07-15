@@ -29,11 +29,10 @@ Como primer paso se importarán los datos crudos, para esto se usará una funci�
 iterativa, map.
 
 ```{r}
-raw_data <- map(3:11, .f = function(x){
+raw_data <- map(2:12, .f = function(x){
   read_xlsx(path = 'data/Encuestas.xlsx', sheet = x) %>% 
     mutate(Sheet = x)
 }) %>% bind_rows()
-
 ```
 
 
@@ -56,8 +55,11 @@ clean_data <- raw_data %>% mutate(P4a = tolower(P4a) ) %>%
                                  "ingeniería en ciencias del agua"),
                       "ingeniería en ciencias del agua", P4a)) %>% 
   mutate(P4a = ifelse(grepl("ingeniería", P4a), "Ingeniería", P4a) ) %>% 
-  mutate(P4a = ifelse(!(grepl("Ingeniería", P4a) ),
-                      "Licenciaturas", P4a) )
+  mutate(P4a = ifelse(P4a %in% c('agroecología', 'arquitectura',
+                                 'ciencias experimentales',
+                                 'licenciatura en biocomercio'),
+                      "Licenciaturas", P4a) ) %>% 
+  mutate(P4a = ifelse(P4a %in% c('administrativo'), 'otros', P4a) )
 ```
 
 Ahora, asignaremos las etiquetas de *masculino* y *femenino* para los valores
@@ -89,6 +91,7 @@ Se diferenciará mayormente entre tronco común y semestres de carrera
 clean_data %<>% 
   mutate(`5` = ifelse(`5` > 4, "Carrera", "Tronco común"))
 ```
+
 
 
 # Descripción del espacio muestreal
