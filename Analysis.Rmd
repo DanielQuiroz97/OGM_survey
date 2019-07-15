@@ -23,6 +23,8 @@ library(stringr) # Simple, Consistent Wrappers for Common String Operations
 library(ggalluvial)
 library(magrittr)
 library(ggsci)
+library(scales)
+library(ggpubr)
 ```
 # Importación de datos
 Como primer paso se importarán los datos crudos, para esto se usará una función
@@ -59,7 +61,8 @@ clean_data <- raw_data %>% mutate(P4a = tolower(P4a) ) %>%
                                  'ciencias experimentales',
                                  'licenciatura en biocomercio'),
                       "Licenciaturas", P4a) ) %>% 
-  mutate(P4a = ifelse(P4a %in% c('administrativo'), 'otros', P4a) )
+  mutate(P4a = ifelse(P4a %in% c('administrativo'), 'otros', P4a) ) %>% 
+  mutate(P4a = ifelse(P4a %in% c('docente'), 'Docentes', P4a) )
 ```
 
 Ahora, asignaremos las etiquetas de *masculino* y *femenino* para los valores
@@ -81,8 +84,8 @@ clean_data %<>%
   mutate(P3 = ifelse(P3 == 2, "21-25", P3)) %>% 
   mutate(P3 = ifelse(P3 == 3, "26-30", P3)) %>% 
   mutate(P3 = ifelse(P3 == 4, "31-40", P3)) %>% 
-  mutate(P3 = ifelse(P3 == 5, "41-50", P3)) %>% 
-  mutate(P3 = ifelse(P3 == 1, "> 51", P3))
+  mutate(P3 = ifelse(P3 == 5, "> 40", P3)) %>% 
+  mutate(P3 = ifelse(P3 == 6, "> 40", P3))
 ```
 
 ## Semestres
@@ -104,9 +107,11 @@ sample_space <- clean_data %>% group_by(P2, P3, P4a, `5`) %>%
   summarise(N = n()) %>% arrange(P4a)
 sspace_plot <- ggplot(sample_space, aes(axis1 = P4a, axis2 = `5`, axis3 = P3, y = N)) +
   geom_alluvium(aes(fill = P2),  width = 1/8) +
-  geom_stratum(width = 1/6, fill = "white", color = "grey40") +
-  geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
-  scale_x_continuous(breaks = 1:3, labels = c("Carreras", "Semestre", "Edad")) +
+  geom_stratum(width = 1/4, fill = "white", color = "grey40") +
+  geom_label(stat = "stratum", label.strata = T, size = 3) +
+  scale_x_continuous(breaks = 1:3, labels = c("Carrera/Ocupación",
+                                              "Condición semestral",
+                                              "Grupo etário")) +
   scale_fill_jama() + theme_test() + 
   labs(fill = "Género", y = "Número de Encuestas")
 sspace_plot
@@ -153,7 +158,7 @@ medios_plot <-   ggplot(medios_f) +
   scale_y_continuous(breaks = seq(0, 1, by = 0.25),
                      labels = seq(0, 100, by = 25)) +
   scale_x_discrete(limits = 1:5) +
-  labs(x = "Número de Medios", y = "Probabilidad",
+  labs(x = "Número de medios empleados", y = "Frecuencia relativa (%)",
        fill = "Medios de\ncomunicación")
 medios_plot
 ```
@@ -186,19 +191,20 @@ Con las frecuencias obtenidas, realizared el el gráfico de tipo *alluvial*.
 
 ```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 labs_know <- c("¿Conoce qué es\nun transgénico?",
-               "¿Son comercializados en EC?",
+               "¿Son comercializados\nen Ecuador?",
                "¿Las etiquetas de los alimentos
 deben incluir información sobre
 el contenido de transgénicos?",
                "¿Consume\ntransgénicos?")
-ggplot(knowledge, aes(axis1 = `7`, axis2 = `8`, axis4 = `10`,
+main_plot <- ggplot(knowledge, aes(axis1 = `7`, axis2 = `8`, axis4 = `10`,
                       axis3 = `17`,y = N)) +
   geom_alluvium(aes(fill = `10`), width = 1/20, alpha = 0.6) +
-  geom_stratum(width = 1/6, fill = "white", color = "grey40") +
-  geom_label(stat = "stratum", label.strata = TRUE, size = 2.5) +
+  geom_stratum(width = 1/4, fill = "white", color = "grey40") +
+  geom_label(stat = "stratum", label.strata = TRUE, size = 3) +
   scale_x_continuous(breaks = 1:4, labels = labs_know) +
   scale_fill_uchicago() + theme_test() + 
-  labs(y = "Número de Encuestas") + guides(fill = F)
+  labs(y = "Número de Encuestas") + guides(fill = F) 
+main_plot
 ```
 
 ## Con qué se los relaciona
@@ -211,8 +217,8 @@ Por lo que la fecuencia de las respuestas
     group_by(Variable) %>%  summarise(N = sum(Valor, na.rm = T) ) %>% 
   filter( !(Variable %in% "14h") ) %>% 
   mutate(R_B = ifelse(Variable %in% c("14b", "14d", "14g"),
-                      "Beneficio", "Riesgo") ) %>% 
-  mutate(R_B = factor(R_B, levels = c("Riesgo", "Beneficio")) ) %>% 
+                      "Ventaja", "Desventaja") ) %>% 
+  mutate(R_B = factor(R_B, levels = c("Desventaja", "Ventaja")) ) %>% 
   mutate(Variable = ifelse(Variable %in% "14a", "Residuos agroquímicos",
                            Variable)) %>% 
   mutate(Variable = ifelse(Variable %in% "14b", "Mayor fuente de nutrientes",
@@ -231,13 +237,68 @@ Por lo que la fecuencia de las respuestas
                            Variable)) %>% 
   arrange(-N) %>% mutate(Variable = factor(Variable, levels = .$Variable))
   
-ggplot(risk_benefit, aes(x = Variable, y = N)) + 
+advantages <- ggplot(risk_benefit, aes(x = Variable, y = N)) + 
   geom_bar(aes(fill = R_B),stat = "identity", alpha = 0.9) +
   theme_bw() + labs(fill = "", y = "Número de encuestas", x = "") +
   theme(legend.position=c(0.9,1), legend.justification=c(0.95,1),
         legend.background=element_blank())+
   coord_flip() + ggsci::scale_fill_uchicago()
+advantages
 ```
+
+# Consumo de OGMs
+
+```{r}
+consumption_no <- clean_data %>% filter(`10` == 0) %>% select(`11a`:`11e`) %>% 
+  gather(key = "Question", value = "Value") %>% group_by(Question) %>%
+  summarise(N = sum(Value)) %>% mutate(Per = round(N / sum(N) *100)) %>% 
+  mutate(Question = ifelse(Question %in% "11a", "No son saludables", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "11b", "Son más costosos", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "11c", "No son confiables", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "11d", "Utilizan más químicos", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "11e", "No existen en el mercado", Question)) 
+
+consumtion_pltN <-  ggplot(consumption_no, aes(x = "", y = N, fill = Question)) +
+  geom_bar(stat = "identity") + coord_polar("y", start = 0) +
+  theme_minimal() + ggsci::scale_fill_uchicago() +
+  geom_text(aes(y = N + c(-4, cumsum(N*0.9)[-length(N)]), 
+                label = paste0(Per, "%") )) +
+  theme(axis.text.x=element_blank()) +
+  labs(title = "Consume: No\n", x = '', y = "", fill = "Motivo") 
+consumtion_pltN
+```
+
+
+```{r}
+consumption_yes1 <- clean_data %>% filter(`10` == 1) %>% select(`12a`:`12d`) %>% 
+  gather(key = "Question", value = "Value") %>% group_by(Question) %>%
+  summarise(N = sum(Value, na.rm = T))  %>%
+  mutate(Per = round(N / sum(N) *100)) %>% 
+  mutate(Question = ifelse(Question %in% "12a",
+                            "Se los encuentra\nfácilmente", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "12b",
+                            "Son más baratos", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "12c",
+                            "Son de mayor\ncalidad", Question)) %>% 
+  mutate(Question = ifelse(Question %in% "12d",
+                            "Conozco sobre ellos", Question))
+
+ consumtion_pltY <- ggplot(consumption_yes1, aes(x = "", y = N, fill = Question)) +
+  geom_bar(stat = "identity") + coord_polar("y", start = 0) +
+  theme_minimal() + ggsci::scale_fill_uchicago() +
+  geom_text(aes(y = c(20, 2, 8, 30), 
+                label = paste0(Per, "%") )) +
+  theme(axis.text.x=element_blank()) +
+  labs(title = "Consume: Yes\nPor que?", x = '', y = "", fill = "Motivo") 
+ consumtion_pltY
+```
+
+```{r}
+consumption_plot <- ggarrange(consumtion_pltN, consumtion_pltY,
+                              labels = c("A", "B"), ncol = 2, nrow = 1)
+```
+
+
 
 # OGM comercializados en EC
 Ahora, obtenedremos los OGM que las personas encuestadas indican que
@@ -246,25 +307,26 @@ se consumen en EC.
 ```{r echo=TRUE}
 OGM_products <- clean_data %>% select(starts_with("15")) %>%
   gather(key = "Variable", value = "Valor", `15a`:`15h` ) %>% 
-  mutate(Variable = ifelse(Variable %in% "15e", "15d", Variable)) %>% 
   group_by(Variable) %>%  summarise(N = sum(Valor, na.rm = T) ) %>% 
   arrange(-N) %>% 
   mutate(Variable = ifelse(Variable %in% "15a", "Soya", Variable) ) %>% 
   mutate(Variable = ifelse(Variable %in% "15b", "Arroz", Variable) ) %>% 
   mutate(Variable = ifelse(Variable %in% "15c", "Fréjol", Variable) ) %>% 
-  mutate(Variable = ifelse(Variable %in% "15d", "Papa", Variable) ) %>% 
+  mutate(Variable = ifelse(Variable %in% "15d", "Papa", Variable) ) %>%
+   mutate(Variable = ifelse(Variable %in% "15e", "Salchichas", Variable) ) %>% 
   mutate(Variable = ifelse(Variable %in% "15f",
-                           "Todas las anteriores", Variable) ) %>% 
+                           "Todas las\n anteriores", Variable) ) %>% 
   mutate(Variable = ifelse(Variable %in% "15g", "Ninguno", Variable) ) %>% 
-  mutate(Variable = ifelse(Variable %in% "15h", "No tengo conocimiento", 
+  mutate(Variable = ifelse(Variable %in% "15h", "No tengo\nconocimiento", 
                            Variable) ) %>% 
   mutate(Variable = factor(Variable, levels = .$Variable)) 
 
-ggplot(OGM_products, aes(Variable, N)) +
+products_plot <- ggplot(OGM_products, aes(Variable, N)) +
   geom_bar(aes(fill = Variable), stat = "identity") +
   scale_fill_grey() + coord_flip() + theme_bw() +
   guides(fill = F) + 
-  labs(y = "Número de personas encuestadas", x = "")
+  labs(y = "Frecuencia", x = "")
+products_plot
 ```
 
 
@@ -295,12 +357,14 @@ new_tech <- clean_data %>% select(starts_with("20")) %>%
   
   
   
-ggplot(new_tech, aes(Variable, n )) +
+tech_perception <- ggplot(new_tech, aes(Variable, n )) +
   geom_bar(aes(fill = factor(Valor) ), color = "black",
            stat = "identity", position = "fill") + theme_bw() +
   scale_y_continuous(breaks = seq(0, 1, by = 0.25),
                      labels = seq(0, 100, by = 25)) +
   scale_fill_jama() + coord_flip() +
-  labs(fill = NULL, x = "")
+  labs(fill = "Espera un resultado\nbeneficionso", x = "",
+       y = "Frecuencia relativa (%)")
+tech_perception
 ```
 
