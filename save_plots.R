@@ -4,6 +4,16 @@ ggsave(filename = "sample_space.jpg", plot = sspace_plot, path = "./plots",
 ggsave(filename = "medios_comunicacion.jpg", plot = medios_plot, path = "./plots",
        width = 6, height = 4, units = "in", dpi = 350, scale = 1.35)
 
+ggsave(filename = "semestral.jpg", plot = semestral, path = "./plots",
+       width = 6, height = 4, units = "in", dpi = 350, scale = 1.35)
+
+ggsave(filename = "ocupacion.jpg", plot = ocupacion, path = "./plots",
+       width = 6, height = 4, units = "in", dpi = 350, scale = 1.35)
+
+ggsave(filename = "edad.jpg", plot = edad, path = "./plots",
+       width = 6, height = 4, units = "in", dpi = 350, scale = 1.35)
+
+
 ggsave(filename = "main_plot.jpg", plot = main_plot, path = "./plots",
        width = 6, height = 4, units = "in", dpi = 350, scale = 1.4)
 

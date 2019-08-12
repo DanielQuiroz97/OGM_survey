@@ -2,6 +2,8 @@
 title: "Resultados de Percepción sobre Organismos Genéticamente Modificados"
 author: "Daniel Quiroz"
 output:
+  word_document:
+    toc: yes
   pdf_document:
     toc: yes
   html_notebook:
@@ -119,6 +121,34 @@ sspace_plot <- ggplot(sample_space, aes(axis1 = `5`, axis2 = P4a, axis3 = P3, y 
   labs(fill = "Género", y = "Número de Encuestas")
 sspace_plot
 ```
+
+```{r}
+semestral <- ggplot(sample_space, aes(x= `5`, y = N, fill = P2) ) +
+  geom_bar(stat = "identity") + theme_bw() +
+  scale_fill_d3() +
+  labs(x = "Condición semestral", y = "Número de personas", fill = "Sexo") 
+semestral
+```
+
+```{r}
+ocupacion <- ggplot(sample_space, aes(x= P4a, y = N, fill = P2) ) +
+  geom_bar(stat = "identity") + theme_bw() +
+  scale_fill_d3() +
+  labs(x= "Tipo de carrera/ocupación", y = "Número de personas", fill = "Sexo")
+ocupacion
+```
+
+```{r}
+edad <- sample_space %>% ungroup() %>% 
+  mutate(P3 = factor(P3,
+                     levels = c("17-20","21-25","26-30","30-40", "> 40"))) %>% 
+  ggplot(aes(x= P3, y = N, fill = P2) ) +
+  geom_bar(stat = "identity") + theme_bw() +
+  scale_fill_d3() +
+  labs(x = "Edad", y = "Número de personas", fill = "Sexo")
+edad 
+```
+
 
 ## Medios de Comunicación
 En este apartado, se analizará el número de medios de comunicación que emplea
